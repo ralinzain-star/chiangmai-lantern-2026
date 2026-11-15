@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>2026 清邁–南奔蘭納天燈節</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Today overlay -->
+<div class="today-overlay" id="today-overlay"></div>
+
+<!-- Single cover = countdown overlay above -->
+
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <button class="sb active" data-tab="overview" onclick="showTab('overview')" title="Overview"><span class="mi">travel_explore</span></button>
+    <button class="sb" data-tab="itinerary" onclick="showTab('itinerary')" title="Itinerary"><span class="mi">calendar_month</span></button>
+    <button class="sb" data-tab="booking" onclick="showTab('booking')" title="Booking"><span class="mi">sell</span></button>
+    <button class="sb" data-tab="budget" onclick="showTab('budget')" title="Budget"><span class="mi">wallet</span></button>
+    <button class="sb" data-tab="spots" onclick="showTab('spots')" title="Spots"><span class="mi">map</span></button>
+    <button class="sb" data-tab="shopping" onclick="showTab('shopping')" title="Shopping"><span class="mi">shopping_bag</span></button>
+    <button class="sb" data-tab="checklist" onclick="showTab('checklist')" title="Checklist"><span class="mi">checklist</span></button>
+    <div class="sb-spacer"></div>
+    <button class="sb" id="lang-btn" onclick="toggleLangMenu()" title="Language"><span class="mi">translate</span></button>
+    <button class="sb" onclick="window.print()" title="Print"><span class="mi">print</span></button>
+  </nav>
+
+  <!-- Bottom bar (mobile) -->
+  <div class="bottom-bar">
+    <div class="bottom-bar-inner">
+      <button class="bb active" data-tab="overview" onclick="showTab('overview')"><span class="mi">travel_explore</span><span data-i18n="nav_overview">概覽</span></button>
+      <button class="bb" data-tab="itinerary" onclick="showTab('itinerary')"><span class="mi">calendar_month</span><span data-i18n="nav_itinerary">行程</span></button>
+      <button class="bb" data-tab="booking" onclick="showTab('booking')"><span class="mi">sell</span><span data-i18n="nav_booking">訂位</span></button>
+      <button class="bb" data-tab="checklist" onclick="showTab('checklist')"><span class="mi">checklist</span><span data-i18n="nav_checklist">清單</span></button>
+      <button class="bb" id="bb-more-btn" onclick="toggleMore()"><span class="mi">more_horiz</span><span data-i18n="nav_more">更多</span></button>
+    </div>
+    <div class="bb-more-menu" id="bb-more-menu">
+      <button class="bb-more-item" onclick="showTab('budget')"><span class="mi">wallet</span><span data-i18n="nav_budget">預算</span></button>
+      <button class="bb-more-item" onclick="showTab('spots')"><span class="mi">map</span><span data-i18n="nav_spots">地圖</span></button>
+      <button class="bb-more-item" onclick="showTab('shopping')"><span class="mi">shopping_bag</span><span data-i18n="nav_shopping">逛街</span></button>
+      <button class="bb-more-item" onclick="toggleLangMenu()"><span class="mi">translate</span><span data-i18n="nav_lang">語言</span></button>
+    </div>
+  </div>
+
+  <div class="lang-menu" id="lang-menu">
+    <button data-l="zh" class="on" onclick="setLang('zh')">繁體中文</button>
+    <button data-l="en" onclick="setLang('en')">English</button>
+    <button data-l="th" onclick="setLang('th')">ไทย</button>
+  </div>
+
+  <main class="main">
+    <!-- Overview -->
+    <section class="tab-panel active" id="tab-overview">
+      <div class="hdr">
+        <div>
+          <h1>🏮 2026 清邁–南奔蘭納天燈節</h1>
+          <div class="hdr-meta">11/23–11/29 · 5 位 · 全程五辛素</div>
+        </div>
+        <div class="hdr-actions">
+          <button class="btn-ghost" onclick="exportGeo()"><span class="mi">download</span>GeoJSON</button>
+        </div>
+      </div>
+      <div class="stats" id="ov-stats"></div>
+      <div class="info-box" id="ov-info"></div>
+      <div id="ov-arrivals"></div>
+      <div class="today-card" id="ov-today" style="margin-top:20px"></div>
+    </section>
+
+    <!-- Itinerary -->
+    <section class="tab-panel" id="tab-itinerary">
+      <div class="hdr"><div><h1 data-i18n="nav_itinerary">行程</h1><div class="hdr-meta">11/23–11/29</div></div></div>
+      <div class="cal-live">
+        <div class="clock" id="clock-dest"><span class="cl-label">泰國</span><span class="cl-time">--:--</span></div>
+        <div class="clock home" id="clock-home"><span class="cl-label">台灣</span><span class="cl-time">--:--</span></div>
+      </div>
+      <div id="itinerary-list"></div>
+    </section>
+
+    <!-- Booking -->
+    <section class="tab-panel" id="tab-booking">
+      <div class="hdr"><div><h1 data-i18n="nav_booking">訂位</h1></div></div>
+      <div class="section-title"><span class="mi">flight</span><span data-i18n="book_flights">機票</span></div>
+      <div id="booking-flights"></div>
+      <div class="section-title"><span class="mi">check_circle</span><span data-i18n="book_confirmed">已確認</span></div>
+      <div class="booked-grid" id="booking-confirmed"></div>
+    </section>
+
+    <!-- Budget -->
+    <section class="tab-panel" id="tab-budget">
+      <div class="hdr"><div><h1 data-i18n="nav_budget">預算</h1></div></div>
+      <div class="budget-total" id="budget-total"></div>
+      <div class="section-title"><span class="mi">bar_chart</span><span data-i18n="bud_bycat">分類佔比</span></div>
+      <div class="card"><div class="h-bars" id="budget-cats"></div></div>
+      <div class="section-title"><span class="mi">receipt_long</span><span data-i18n="bud_items">明細</span></div>
+      <div class="card budget-items" id="budget-items"></div>
+    </section>
+
+    <!-- Spots -->
+    <section class="tab-panel" id="tab-spots">
+      <div class="hdr"><div><h1 data-i18n="nav_spots">地圖</h1></div></div>
+      <div class="filters" id="poi-filters"></div>
+      <div class="attr-layout">
+        <div id="map"></div>
+        <div class="poi-list" id="poi-list"></div>
+      </div>
+    </section>
+
+    <!-- Shopping -->
+    <section class="tab-panel" id="tab-shopping">
+      <div class="hdr"><div><h1 data-i18n="nav_shopping">逛街</h1><div class="hdr-meta">曼谷 × 清邁</div></div></div>
+      <div id="shopping-body"></div>
+    </section>
+
+    <!-- Checklist -->
+    <section class="tab-panel" id="tab-checklist">
+      <div class="hdr"><div><h1 data-i18n="nav_checklist">清單</h1></div></div>
+      <div class="check-grid" id="checklist-grid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()"><span class="mi">close</span></button>
+    <h2 id="modal-title"></h2>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script id="trip-data" type="application/json">{
+  "destination": "曼谷 → 清邁",
+  "destination_en": "Bangkok → Chiang Mai",
+  "tagline": {
+    "zh": "萬人天燈升空、泛舟尖叫、草藥蒸雞籠，五個人的蘭納節慶",
+    "en": "Lanterns in the sky, white-water screams, herbal steam baskets — five of us at the Lanna festival",
+    "th": "โคมลอยลานนา ล่องแก่ง และสปาสมุนไพร"
+  },
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-29",
+  "people": 5,
+  "currency": { "home": "TWD", "rates": { "THB": 0.92 } },
+  "flightIntel": {
+    "route": "TPE ⇄ BKK / CNX",
+    "userPrice": 0,
+    "booked": true
+  },
+  "flights": {
+    "outbound": {
+      "flight": "TG633", "carrier": "Thai Airways",
+      "date": "2026-11-23", "dep": "桃園 T1", "dep_en": "Taoyuan T1", "dep_time": "13:55",
+      "arr": "曼谷 Suvarnabhumi", "arr_en": "Bangkok Suvarnabhumi", "arr_time": "16:50",
+      "duration": "3h55m", "baggage": "託運 1PC / 23KG", "baggage_en": "Checked 1PC / 23KG"
+    },
+    "return": {
+      "flight": "FD242", "carrier": "Thai AirAsia",
+      "date": "2026-11-29", "dep": "清邁 CNX", "dep_en": "Chiang Mai CNX", "dep_time": "00:20",
+      "arr": "桃園 T1", "arr_en": "Taoyuan T1", "arr_time": "04:55",
+      "duration": "3h35m", "baggage": "無託運（需加購）", "baggage_en": "No checked bag (add-on needed)"
+    }
+  },
+  "hotels": [
+    { "name": "家圖亞公寓酒店", "name_en": "Jia Tu Ya Apartment Hotel", "city": "bangkok", "dates": "11/23–24", "price_twd": 1502, "note": "Iris＋十渶", "lat": 13.7373, "lng": 100.5600 },
+    { "name": "Baansuan in Town Hotel", "name_en": "Baansuan in Town Hotel", "city": "chiangmai", "dates": "11/25–26", "price_twd": 2154, "note": "3 間客房 · 天燈節當晚", "note_en": "3 rooms · lantern night", "lat": 18.7900, "lng": 98.9930 },
+    { "name": "工藝尼曼公寓 The Craft Nimman", "name_en": "The Craft Nimman", "city": "chiangmai", "dates": "11/26–29", "price_twd": 20664, "note": "2 間客房 · 3 晚 · 可寄行李、晚退房", "note_en": "2 rooms · 3 nights", "lat": 18.7970, "lng": 98.9670 }
+  ],
+  "pois": [
+    { "id": "bk-hotel", "name": "家圖亞公寓酒店", "name_en": "Jia Tu Ya Apartment Hotel", "city": "bangkok", "cat": "hotel", "lat": 13.7373, "lng": 100.5600, "desc": "11/23–24 曼谷住宿", "desc_en": "Bangkok stay 11/23–24", "addr": "曼谷市區" },
+    { "id": "bk-dinner", "name": "Iris 選的曼谷餐廳", "name_en": "Iris's Bangkok dinner pick", "city": "bangkok", "cat": "food", "lat": 13.7400, "lng": 100.5600, "desc": "11/23 晚餐（訂位中）", "desc_en": "11/23 dinner (booking)", "addr": "曼谷", "url": "https://maps.app.goo.gl/EPE6iiZQkMH4QZhGA" },
+    { "id": "bk-happitat", "name": "Happitat 森林商場", "name_en": "Happitat Forest Mall", "city": "bangkok", "cat": "attraction", "lat": 13.6930, "lng": 100.6200, "desc": "11/24 10:00 · MRT 黃線 Si Iam · 百間餐廳可覓素", "desc_en": "11/24 · MRT Yellow Si Iam · vegetarian-friendly", "addr": "Si Iam" },
+    { "id": "bk-skyflyer", "name": "SkyFlyers 高空體驗", "name_en": "SkyFlyers", "city": "bangkok", "cat": "attraction", "lat": 13.7260, "lng": 100.5290, "desc": "11/24 14:00 · 選配（懼高可略過）", "desc_en": "Optional high-altitude experience", "addr": "曼谷" },
+    { "id": "bk-cw", "name": "Central World", "name_en": "CentralWorld", "city": "bangkok", "cat": "shopping", "lat": 13.7466, "lng": 100.5396, "desc": "Comma &nd 選品、70+ 品牌", "desc_en": "Comma &nd select, 70+ brands", "addr": "Ratchaprasong", "url": "https://www.centralworld.co.th" },
+    { "id": "bk-t21", "name": "Terminal 21 Asok", "name_en": "Terminal 21 Asok", "city": "bangkok", "cat": "shopping", "lat": 13.7373, "lng": 100.5600, "desc": "泰國 9 家本土品牌 · BTS Asok", "desc_en": "9 Thai local brands · BTS Asok", "addr": "Asok", "url": "https://www.terminal21.co.th/asok" },
+    { "id": "bk-emsphere", "name": "EMSPHERE", "name_en": "EMSPHERE", "city": "bangkok", "cat": "shopping", "lat": 13.7300, "lng": 100.5690, "desc": "BTS Phrom Phong", "desc_en": "BTS Phrom Phong", "addr": "Sukhumvit", "url": "https://www.google.com/maps/search/EMSPHERE+Bangkok" },
+
+    { "id": "cm-lounge", "name": "休閒空間（寄行李／梳洗）", "name_en": "Rest lounge (luggage & shower)", "city": "chiangmai", "cat": "other", "lat": 18.7880, "lng": 98.9890, "desc": "11/25 08:00 進場 · 150 THB/人/時 · 已訂", "desc_en": "11/25 08:00 · 150 THB/person/hr · booked", "addr": "清邁古城", "url": "https://maps.app.goo.gl/MRgqYfvPPuhSRQR69" },
+    { "id": "cm-chada", "name": "Chada 齋食", "name_en": "Chada Vegetarian", "city": "chiangmai", "cat": "food", "lat": 18.7880, "lng": 98.9860, "desc": "11/25 午餐 · 古城 · Google 4.9", "desc_en": "11/25 lunch · old city · 4.9", "addr": "古城" },
+    { "id": "cm-cad", "name": "CAD 萬人天燈節會場", "name_en": "CAD Lantern Festival venue", "city": "chiangmai", "cat": "attraction", "lat": 18.8620, "lng": 98.9790, "desc": "11/25 下午–20:15 · 文化體驗→蘭納晚餐→放天燈", "desc_en": "Culture → Lanna dinner → 20:15 lanterns", "addr": "清邁北郊", "url": "https://ticket.settour.com.tw/product/TKN0000016144" },
+    { "id": "cm-raft", "name": "Mae Taeng 泛舟＋竹筏", "name_en": "Mae Taeng rafting + bamboo raft", "city": "chiangmai", "cat": "attraction", "lat": 19.1200, "lng": 98.8300, "desc": "11/26 08:30 整日水上行程 · 約 17:00 回", "desc_en": "11/26 full-day water trip", "addr": "Mae Taeng" },
+    { "id": "cm-sense", "name": "Sense Garden 草藥蒸雞籠", "name_en": "Sense Garden herbal steam", "city": "chiangmai", "cat": "other", "lat": 18.7920, "lng": 98.9850, "desc": "11/26 20:00 · 已訂無訂金 · 草藥球＋蒸雞籠互換", "desc_en": "11/26 20:00 · booked · herbal ball + steam basket", "addr": "33/2 Sri Poom Rd, Si Phum", "url": "https://www.google.com/maps/search/Sense+Garden+Massage+Chiang+Mai" },
+    { "id": "cm-raintree", "name": "雨豆樹 + 大象咖啡", "name_en": "Giant Rain Tree + Elephant Cafe", "city": "chiangmai", "cat": "attraction", "lat": 19.1600, "lng": 98.8600, "desc": "11/27 05:30–12:30 睡飽版套裝 · 俊華訂", "desc_en": "11/27 sleep-in package tour", "addr": "Mae Ngat 水壩" },
+    { "id": "cm-baanlandai", "name": "Baan Landai 米其林泰菜", "name_en": "Baan Landai (Michelin)", "city": "chiangmai", "cat": "food", "lat": 18.8010, "lng": 98.9600, "desc": "11/27 13:00 午餐 · 已訂 5 位 · 五辛素", "desc_en": "11/27 13:00 lunch · 5 seats booked · no-allium veg", "addr": "清邁", "reservation": true },
+    { "id": "cm-veganheaven", "name": "Vegan Heaven", "name_en": "Vegan Heaven", "city": "chiangmai", "cat": "food", "lat": 18.7960, "lng": 98.9680, "desc": "鳳梨炒飯超上鏡 · 11/27 & 11/28 晚餐", "desc_en": "Photogenic pineapple fried rice", "addr": "尼曼" },
+    { "id": "cm-flyingbird", "name": "Flying Bird 動力飛行傘", "name_en": "Flying Bird paramotor", "city": "chiangmai", "cat": "attraction", "lat": 18.9000, "lng": 99.0300, "desc": "11/28 06:00 日出 · 選配 · Dina 協調 · 每日限 4 名", "desc_en": "11/28 sunrise paramotor · optional", "addr": "清邁郊區" },
+
+    { "id": "cm-onenimman", "name": "One Nimman", "name_en": "One Nimman", "city": "chiangmai", "cat": "shopping", "lat": 18.8000, "lng": 98.9670, "desc": "尼曼選品 · 週末市集五–日 15:00–21:00", "desc_en": "Nimman select + weekend market", "addr": "Nimman", "url": "https://www.google.com/maps/search/One+Nimman+Chiang+Mai" },
+    { "id": "cm-baankangwat", "name": "Baan Kang Wat 藝術村", "name_en": "Baan Kang Wat", "city": "chiangmai", "cat": "shopping", "lat": 18.7770, "lng": 98.9350, "desc": "手作選品、在地藝術家", "desc_en": "Handmade crafts, local artists", "addr": "清邁西側", "url": "https://www.google.com/maps/search/Baan+Kang+Wat+Chiang+Mai" },
+    { "id": "cm-jingjai", "name": "Jing Jai 真心市集", "name_en": "Jing Jai Market", "city": "chiangmai", "cat": "shopping", "lat": 18.8100, "lng": 98.9990, "desc": "週六／日早上 · 咖啡豆、天然染布、手作食品", "desc_en": "Sat/Sun AM · coffee, textiles, food", "addr": "近清大", "url": "https://www.google.com/maps/search/Jing+Jai+Market+Chiang+Mai" },
+    { "id": "cm-wualai", "name": "週六夜市 Wualai 銀器街", "name_en": "Wualai Saturday Walking Street", "city": "chiangmai", "cat": "shopping", "lat": 18.7800, "lng": 98.9900, "desc": "11/28 晚 · 銀器、手工藝、草編鞋", "desc_en": "11/28 night · silver, crafts, woven shoes", "addr": "Wualai Rd", "url": "https://www.google.com/maps/search/Wualai+Saturday+Walking+Street+Chiang+Mai" },
+    { "id": "cm-changklan", "name": "清邁夜市 Chang Klan", "name_en": "Chang Klan Night Bazaar", "city": "chiangmai", "cat": "shopping", "lat": 18.7870, "lng": 98.9990, "desc": "天天 · 便宜 T、山地雜貨、木雕大象", "desc_en": "Daily · cheap tees, crafts, carvings", "addr": "Chang Klan", "url": "https://www.google.com/maps/search/Chiang+Mai+Night+Bazaar+Chang+Klan" },
+    { "id": "cm-favs", "name": "Favs Selected / River & Roads / Akaliko", "name_en": "Old-city select shops", "city": "chiangmai", "cat": "shopping", "lat": 18.7880, "lng": 98.9930, "desc": "古城選品群 · 棉麻、香氛、設計小物", "desc_en": "Old-city select cluster", "addr": "古城 Tha Phae", "url": "https://www.google.com/maps/search/Favs+Selected+Chiang+Mai" }
+  ],
+  "schedule": [
+    { "date": "2026-11-23", "city": "曼谷", "city_en": "Bangkok", "events": [
+      { "sh": 13.91, "eh": 16.83, "name": "TG633 桃園 → 曼谷", "name_en": "TG633 Taoyuan → Bangkok", "cat": "transport", "note": "13:55 起飛 · 16:50 抵 Suvarnabhumi", "note_en": "Depart 13:55 · arrive 16:50" },
+      { "sh": 18, "eh": 19.5, "name": "入住 家圖亞公寓酒店", "name_en": "Check in — Jia Tu Ya", "cat": "hotel", "note": "Iris＋十渶", "note_en": "Iris + Shih-Ying" },
+      { "sh": 19.5, "eh": 21, "name": "晚餐 · Iris 選的餐廳", "name_en": "Dinner — Iris's pick", "cat": "food", "note": "訂位中", "note_en": "booking", "restaurant": "Iris pick", "map": "https://maps.app.goo.gl/EPE6iiZQkMH4QZhGA", "reservation": "needed" }
+    ]},
+    { "date": "2026-11-24", "city": "曼谷", "city_en": "Bangkok", "events": [
+      { "sh": 10, "eh": 13, "name": "Happitat 森林商場", "name_en": "Happitat Forest Mall", "cat": "attraction", "note": "MRT 黃線 Si Iam · 覓素午餐", "note_en": "MRT Yellow Si Iam · veg lunch" },
+      { "sh": 14, "eh": 16, "name": "SkyFlyers 高空（選配）", "name_en": "SkyFlyers (optional)", "cat": "attraction", "note": "懼高可略過", "note_en": "skip if afraid of heights" },
+      { "sh": 18, "eh": 20, "name": "夜車 曼谷 → 清邁", "name_en": "Overnight coach BKK → CNX", "cat": "transport", "note": "12go 巴士約 2,748 元 · 臥鋪過夜", "note_en": "12go coach ~NT$2,748 · sleeper", "booking_url": "https://12go.asia/zh/checkout/9c6e97dd" }
+    ]},
+    { "date": "2026-11-25", "city": "清邁", "city_en": "Chiang Mai", "events": [
+      { "sh": 7, "eh": 8, "name": "夜車抵達清邁", "name_en": "Arrive Chiang Mai", "cat": "transport", "note": "", "note_en": "" },
+      { "sh": 8, "eh": 11, "name": "休閒空間 寄行李／梳洗／補眠", "name_en": "Rest lounge", "cat": "other", "note": "150 THB/人/時 · 已訂 · 8:00 進場", "note_en": "150 THB/person/hr · booked", "map": "https://maps.app.goo.gl/MRgqYfvPPuhSRQR69" },
+      { "sh": 11, "eh": 12.5, "name": "午餐 Chada 齋食", "name_en": "Lunch — Chada Vegetarian", "cat": "food", "note": "古城 · Google 4.9", "note_en": "old city · 4.9", "restaurant": "Chada", "map": "https://www.google.com/maps/search/Chada+Vegetarian+Chiang+Mai" },
+      { "sh": 13, "eh": 14.5, "name": "私人包車 → CAD 會場", "name_en": "Private charter → CAD venue", "cat": "transport", "note": "Dina 已訂", "note_en": "booked by Dina" },
+      { "sh": 14.5, "eh": 20.25, "name": "天燈節 CAD", "name_en": "CAD Lantern Festival", "cat": "attraction", "note": "文化體驗 → 蘭納晚餐 → 20:15 放天燈 · 自備乾糧", "note_en": "culture → Lanna dinner → 20:15 lanterns", "booking_url": "https://ticket.settour.com.tw/product/TKN0000016144" },
+      { "sh": 21.5, "eh": 22, "name": "入住 Baansuan in Town", "name_en": "Check in — Baansuan", "cat": "hotel", "note": "", "note_en": "" }
+    ]},
+    { "date": "2026-11-26", "city": "清邁", "city_en": "Chiang Mai", "events": [
+      { "sh": 8.5, "eh": 17, "name": "Mae Taeng 泛舟＋竹筏", "name_en": "Mae Taeng rafting + bamboo raft", "cat": "attraction", "note": "整日水上行程 · 不玩水可逛古城", "note_en": "full-day water trip; old-city alt" },
+      { "sh": 17.5, "eh": 19.5, "name": "轉入 The Craft Nimman · 晚餐", "name_en": "Move to The Craft Nimman · dinner", "cat": "hotel", "note": "Begin Vegan / RAD RABBIT", "note_en": "Begin Vegan / RAD RABBIT" },
+      { "sh": 20, "eh": 22, "name": "Sense Garden 草藥蒸雞籠", "name_en": "Sense Garden herbal steam", "cat": "other", "note": "已訂無訂金 · 女草藥球1hr／男蒸雞籠30min 互換", "note_en": "booked · herbal ball + steam basket", "map": "https://www.google.com/maps/search/Sense+Garden+Massage+Chiang+Mai", "reservation": true }
+    ]},
+    { "date": "2026-11-27", "city": "清邁", "city_en": "Chiang Mai", "events": [
+      { "sh": 5.5, "eh": 12.5, "name": "雨豆樹 + 大象咖啡套裝", "name_en": "Rain Tree + Elephant Cafe tour", "cat": "attraction", "note": "睡飽版 · 俊華訂 · Mae Ngat 長尾船", "note_en": "sleep-in package · booked by Jun-Hua" },
+      { "sh": 13, "eh": 14.5, "name": "午餐 Baan Landai 米其林", "name_en": "Lunch — Baan Landai (Michelin)", "cat": "food", "note": "已訂 5 位 · 五辛素", "note_en": "5 seats booked · no-allium veg", "restaurant": "Baan Landai", "map": "https://www.google.com/maps/search/Baan+Landai+Chiang+Mai", "reservation": true },
+      { "sh": 15, "eh": 18, "name": "香氛採買 + 古城大麻 dispensary", "name_en": "Fragrance shopping + dispensary", "cat": "shopping", "note": "Cinder & Smoke / copenn", "note_en": "Cinder & Smoke / copenn" },
+      { "sh": 19, "eh": 20.5, "name": "晚餐 Vegan Heaven", "name_en": "Dinner — Vegan Heaven", "cat": "food", "note": "鳳梨炒飯", "note_en": "pineapple fried rice", "restaurant": "Vegan Heaven", "map": "https://www.google.com/maps/search/Vegan+Heaven+Chiang+Mai" }
+    ]},
+    { "date": "2026-11-28", "city": "清邁", "city_en": "Chiang Mai", "events": [
+      { "sh": 6, "eh": 8, "name": "Flying Bird 動力飛行傘（選配）", "name_en": "Flying Bird paramotor (optional)", "cat": "attraction", "note": "日出 · Dina 協調 · 每日限 4 名", "note_en": "sunrise · optional" },
+      { "sh": 9.5, "eh": 12.5, "name": "尼曼區選品", "name_en": "Nimman shopping", "cat": "shopping", "note": "One Nimman / Baan Kang Wat / copenn", "note_en": "One Nimman / Baan Kang Wat" },
+      { "sh": 12.5, "eh": 13.5, "name": "午餐 RAD RABBIT 純素披薩", "name_en": "Lunch — RAD RABBIT", "cat": "food", "note": "", "note_en": "", "restaurant": "RAD RABBIT", "map": "https://www.google.com/maps/search/RAD+RABBIT+Chiang+Mai" },
+      { "sh": 14, "eh": 18, "name": "古城選品", "name_en": "Old-city shopping", "cat": "shopping", "note": "Tha Phae / Favs / River & Roads / 草編一條街", "note_en": "Tha Phae / Favs / River & Roads" },
+      { "sh": 18, "eh": 21, "name": "週六夜市 Wualai 銀器街", "name_en": "Wualai Saturday Walking Street", "cat": "shopping", "note": "銀器、手工藝、草編鞋", "note_en": "silver, crafts, woven shoes" },
+      { "sh": 21, "eh": 22, "name": "晚餐 Vegan Heaven", "name_en": "Dinner — Vegan Heaven", "cat": "food", "note": "泰墨料理收尾", "note_en": "", "restaurant": "Vegan Heaven", "map": "https://www.google.com/maps/search/Vegan+Heaven+Chiang+Mai" }
+    ]},
+    { "date": "2026-11-29", "city": "清邁→台北", "city_en": "Chiang Mai → Taipei", "events": [
+      { "sh": 0.33, "eh": 4.91, "name": "FD242 清邁 → 桃園", "name_en": "FD242 Chiang Mai → Taoyuan", "cat": "transport", "note": "00:20 起飛 · 04:55 抵桃園 T1 · 無託運需加購", "note_en": "Depart 00:20 · arrive 04:55 · no checked bag" }
+    ]}
+  ],
+  "budget": { "items": [
+    { "name": "✈️ 機票 台北/高雄 ⇄ 曼谷/清邁", "name_en": "✈️ Flights", "city": "bangkok", "cat": "transport", "cost_twd": 12000 },
+    { "name": "🏨 住宿（曼谷1＋清邁4，分房）", "name_en": "🏨 Accommodation", "city": "chiangmai", "cat": "hotel", "cost_twd": 5000 },
+    { "name": "🚌 曼谷→清邁夜車", "name_en": "🚌 Overnight coach", "city": "chiangmai", "cat": "transport", "cost_twd": 2748 },
+    { "name": "🏮 CAD 天燈節門票", "name_en": "🏮 Lantern ticket", "city": "chiangmai", "cat": "attraction", "cost_twd": 4498 },
+    { "name": "💆 草藥按摩＋泛舟＋包車＋動力傘", "name_en": "💆 Massage + rafting + charter", "city": "chiangmai", "cat": "attraction", "cost_twd": 3200 },
+    { "name": "🍽️ 五辛素餐飲 7 天", "name_en": "🍽️ Vegetarian meals 7d", "city": "chiangmai", "cat": "food", "cost_twd": 3800 },
+    { "name": "🚕 當地交通 Grab", "name_en": "🚕 Local transit / Grab", "city": "chiangmai", "cat": "transport", "cost_twd": 500 },
+    { "name": "🛍️ 伴手禮（選品／香氛／泰奶）", "name_en": "🛍️ Souvenirs", "city": "chiangmai", "cat": "shopping", "cost_twd": 3000 }
+  ]},
+  "shopping": {
+    "topPicks": [
+      { "name": "Gentlewoman 托特包", "name_en": "Gentlewoman tote", "url": "https://www.google.com/maps/search/Gentlewoman+CentralWorld+Bangkok" },
+      { "name": "Jelly Bunny 果凍鞋", "name_en": "Jelly Bunny jelly shoes", "url": "https://jellybunny.com" },
+      { "name": "泰國咖啡豆", "name_en": "Thai coffee beans", "url": "https://akhaama.com" },
+      { "name": "清邁手工藝（銀器／棉麻／草編鞋）", "name_en": "Chiang Mai crafts (silver/linen/woven shoes)", "url": "https://www.google.com/maps/search/Wualai+Saturday+Walking+Street+Chiang+Mai" }
+    ],
+    "bangkok": {
+      "brands": [
+        { "name": "Gentlewoman（國民托特包）", "name_en": "Gentlewoman (iconic tote)", "url": "https://www.google.com/maps/search/Gentlewoman+CentralWorld+Bangkok" },
+        { "name": "Lyn（百貨包鞋）", "name_en": "Lyn (bags & shoes)", "url": "https://www.google.com/maps/search/Lyn+bag+Bangkok" },
+        { "name": "NaRaYa 曼谷包", "name_en": "NaRaYa", "url": "https://www.naraya.com" },
+        { "name": "MERGE / Somphara 設計師托特", "name_en": "MERGE / Somphara totes", "url": "https://www.google.com/search?q=Merge+bag+thailand" },
+        { "name": "RichieRich 帽子", "name_en": "RichieRich caps", "url": "https://www.google.com/search?q=RichieRich+cap+thailand" },
+        { "name": "Jelly Bunny 果凍鞋", "name_en": "Jelly Bunny", "url": "https://jellybunny.com" },
+        { "name": "O.B.A. 小眾香氛", "name_en": "O.B.A. fragrance", "url": "https://www.google.com/search?q=O.B.A+fragrance+thailand" },
+        { "name": "Gentle Monster 墨鏡", "name_en": "Gentle Monster", "url": "https://www.gentlemonster.com" },
+        { "name": "Monchhichi 泰國限定", "name_en": "Monchhichi Thai limited", "url": "https://www.google.com/search?q=Monchhichi+Thailand+limited" }
+      ],
+      "malls": [
+        { "name": "Central World（Comma &nd）", "name_en": "CentralWorld", "url": "https://www.centralworld.co.th" },
+        { "name": "Terminal 21 Asok", "name_en": "Terminal 21 Asok", "url": "https://www.terminal21.co.th/asok" },
+        { "name": "EMSPHERE", "name_en": "EMSPHERE", "url": "https://www.google.com/maps/search/EMSPHERE+Bangkok" }
+      ],
+      "ref": { "name": "IG @bkk_style55（百貨代購）", "name_en": "IG @bkk_style55", "url": "https://www.instagram.com/bkk_style55/" }
+    },
+    "chiangmai": {
+      "buy": [
+        { "name": "北部手沖咖啡豆", "name_en": "Northern coffee beans", "url": "https://akhaama.com" },
+        { "name": "天然染棉麻／部落織品", "name_en": "Natural-dye linen / tribal textiles", "url": "https://www.google.com/maps/search/Jing+Jai+Market+Chiang+Mai" },
+        { "name": "草編鞋／手工編織涼鞋", "name_en": "Woven shoes / sandals", "url": "https://www.google.com/maps/search/Wualai+Saturday+Walking+Street+Chiang+Mai" },
+        { "name": "Wualai 銀器", "name_en": "Wualai silver", "url": "https://www.google.com/maps/search/Wualai+Silver+Street+Chiang+Mai" },
+        { "name": "青瓷、草本香氛、象糞紙", "name_en": "Celadon, herbal scents, elephant-dung paper", "url": "https://www.google.com/maps/search/Chiang+Mai+celadon" },
+        { "name": "Doi Tung 皇家計畫", "name_en": "Doi Tung royal project", "url": "https://www.doitung.com" }
+      ],
+      "markets": [
+        { "name": "⭐ 週六夜市 Wualai 銀器街（11/28 晚）", "name_en": "Wualai Saturday Walking Street", "url": "https://www.google.com/maps/search/Wualai+Saturday+Walking+Street+Chiang+Mai" },
+        { "name": "Jing Jai 真心市集（週六/日早）", "name_en": "Jing Jai Market", "url": "https://www.google.com/maps/search/Jing+Jai+Market+Chiang+Mai" },
+        { "name": "One Nimman 週末市集", "name_en": "One Nimman weekend market", "url": "https://www.google.com/maps/search/One+Nimman+Chiang+Mai" },
+        { "name": "Chang Klan 清邁夜市（天天）", "name_en": "Chang Klan Night Bazaar", "url": "https://www.google.com/maps/search/Chiang+Mai+Night+Bazaar+Chang+Klan" }
+      ],
+      "shops": [
+        { "name": "尼曼：One Nimman／Baan Kang Wat／copenn／Charlie 泰奶", "name_en": "Nimman select shops", "url": "https://www.google.com/maps/search/One+Nimman+Chiang+Mai" },
+        { "name": "古城：Favs Selected／River & Roads／Akaliko／草編一條街", "name_en": "Old-city select shops", "url": "https://www.google.com/maps/search/Favs+Selected+Chiang+Mai" }
+      ]
+    }
+  },
+  "checklist": [
+    { "title": { "zh": "證件 & 入境", "en": "Documents & Entry", "th": "เอกสาร" }, "items": [
+      { "zh": "TDAC 泰國電子入境卡（抵達前 3 天）", "en": "TDAC e-arrival card (within 3 days)", "th": "TDAC" },
+      { "zh": "護照有效期 6 個月以上", "en": "Passport valid 6+ months", "th": "พาสปอร์ต" },
+      { "zh": "回程 FD242 無託運 → 記得加購行李", "en": "Return FD242 has no checked bag → add one", "th": "" }
+    ]},
+    { "title": { "zh": "已訂（確認）", "en": "Booked (confirm)", "th": "จองแล้ว" }, "items": [
+      { "zh": "CAD 天燈節門票（Settour 標準票）", "en": "CAD lantern ticket (Settour)", "th": "" },
+      { "zh": "Sense Garden 按摩 11/26 20:00（十渶）", "en": "Sense Garden 11/26 20:00", "th": "" },
+      { "zh": "Baan Landai 11/27 13:00 五位（五辛素）", "en": "Baan Landai 11/27 13:00 x5", "th": "" },
+      { "zh": "11/25 休閒空間（男女兩筆）", "en": "11/25 rest lounge", "th": "" },
+      { "zh": "11/25 天燈節會場包車（Dina）", "en": "11/25 festival charter", "th": "" },
+      { "zh": "11/27 雨豆樹＋大象咖啡套裝（俊華）", "en": "11/27 rain-tree + elephant tour (Jun-Hua)", "th": "" },
+      { "zh": "Mae Taeng 泛舟＋竹筏 11/26", "en": "Mae Taeng rafting + bamboo raft 11/26", "th": "" }
+    ]},
+    { "title": { "zh": "待辦", "en": "To-do", "th": "สิ่งที่ต้องทำ" }, "items": [
+      { "zh": "日出動力傘 Flying Bird 11/28（選配，Dina）", "en": "Flying Bird paramotor 11/28", "th": "" },
+      { "zh": "泰國 eSIM、旅遊平安險", "en": "Thai eSIM, travel insurance", "th": "" }
+    ]},
+    { "title": { "zh": "打包 & 衣物", "en": "Packing & Clothing", "th": "การแพ็ค" }, "items": [
+      { "zh": "薄外套（早晚涼 18–20°C）", "en": "Light jacket (cool mornings 18–20°C)", "th": "" },
+      { "zh": "長袖上衣", "en": "Long-sleeve top", "th": "" },
+      { "zh": "保暖外套＋長褲（清晨雨豆樹／泛舟／動力傘會冷）", "en": "Warm jacket + long pants (cold dawn tours)", "th": "" },
+      { "zh": "短袖、透氣衣物（白天約 30°C）", "en": "Tees / breathable clothes (hot ~30°C days)", "th": "" },
+      { "zh": "防蚊液（天燈節晚上戶外久）", "en": "Mosquito repellent (lantern night)", "th": "" },
+      { "zh": "防曬乳", "en": "Sunscreen", "th": "" },
+      { "zh": "太陽眼鏡", "en": "Sunglasses", "th": "" },
+      { "zh": "帽子", "en": "Hat", "th": "" },
+      { "zh": "手機防水袋（綁手上，別掛脖子！）", "en": "Phone waterproof pouch (wrist, not neck!)", "th": "" },
+      { "zh": "換洗衣物（泛舟會全身濕）", "en": "Change of clothes (rafting soaks you)", "th": "" },
+      { "zh": "毛巾", "en": "Towel", "th": "" },
+      { "zh": "夾腳拖", "en": "Flip-flops", "th": "" },
+      { "zh": "塑膠袋（裝濕衣）", "en": "Plastic bag (for wet clothes)", "th": "" },
+      { "zh": "萬用轉接頭（泰國插座多相容台灣扁插）", "en": "Universal adapter", "th": "" },
+      { "zh": "行動電源", "en": "Power bank", "th": "" },
+      { "zh": "個人藥品", "en": "Personal meds", "th": "" },
+      { "zh": "衣服可少帶：清邁自助洗衣店多又便宜，可中途洗", "en": "Pack light — cheap laundromats in Chiang Mai, wash mid-trip", "th": "" },
+      { "zh": "回程 FD242 無託運 → 分裝掛一人 or 先加購", "en": "Return FD242 no checked bag → share on one person or add ahead", "th": "" }
+    ]},
+    { "title": { "zh": "放鬆時光（大麻）", "en": "Cannabis notes", "th": "กัญชา" }, "items": [
+      { "zh": "只在有牌照 dispensary 購買、出示護照", "en": "Buy only at licensed dispensary", "th": "" },
+      { "zh": "⚠️ 絕對不可攜帶出入境（含國內線）", "en": "⚠️ Never carry across borders", "th": "" },
+      { "zh": "曼谷 Golden Hour 可開醫療證明；清邁管制較鬆", "en": "BKK Golden Hour medical cert; CM looser", "th": "" }
+    ]},
+    { "title": { "zh": "五辛素小抄", "en": "No-allium veg notes", "th": "เจ" }, "items": [
+      { "zh": "找黃紅 เจ 旗 = 純素無五辛", "en": "Look for red/yellow เจ flag", "th": "เจ" },
+      { "zh": "ไม่ใส่กระเทียม ไม่ใส่หัวหอม = 不加蒜、不加洋蔥", "en": "No garlic, no onion", "th": "" },
+      { "zh": "CAD 自助餐含五辛 → 自備乾糧", "en": "CAD buffet has allium → bring snacks", "th": "" }
+    ]}
+  ]
+}</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
