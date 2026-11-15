@@ -32,7 +32,9 @@ a{color:inherit}
 
 /* ===== TODAY OVERLAY ===== */
 .today-overlay{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(160deg,#1c1206,#432611 60%,#8f3f17);color:#fff;transition:transform .55s ease;text-align:center;padding:24px}
+  background:linear-gradient(180deg,rgba(16,9,3,.72),rgba(50,25,11,.70) 45%,rgba(120,52,22,.80)),
+    url('https://images.unsplash.com/photo-1500754088824-ce0582cfe45f?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;
+  color:#fff;transition:transform .55s ease;text-align:center;padding:24px}
 .today-overlay.hidden{transform:translateY(-100%)}
 .today-label{font-size:.8rem;letter-spacing:2px;text-transform:uppercase;opacity:.8}
 .today-count{font-size:clamp(3rem,16vw,6rem);font-weight:700;line-height:1;margin:6px 0}
